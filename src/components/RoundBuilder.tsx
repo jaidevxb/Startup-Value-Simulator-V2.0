@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Plus, Settings, TrendingUp, Calculator } from 'lucide-react';
+import { Plus, Settings, TrendingUp, Calculator, Edit, Trash2 } from 'lucide-react';
 import { useScenarioStore } from '../store/scenario-store';
 import { FundingRound, RoundType } from '../types/financial';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const RoundBuilder: React.FC = () => {
-  const { addRound, currentScenario } = useScenarioStore();
+  const { addRound, updateRound, removeRound, currentScenario } = useScenarioStore();
   const [isOpen, setIsOpen] = useState(false);
+  const [editingRound, setEditingRound] = useState<FundingRound | null>(null);
   const [roundData, setRoundData] = useState<Partial<FundingRound>>({
     name: '',
     type: 'PRICED',
@@ -22,32 +23,75 @@ export const RoundBuilder: React.FC = () => {
       capitalRaised: 0,
       timestamp: new Date()
     });
+    setEditingRound(null);
+  };
+  
+  const startEdit = (round: FundingRound) => {
+    setEditingRound(round);
+    setRoundData(round);
+    setIsOpen(true);
+  };
+  
+  const handleDelete = (roundId: string) => {
+    if (confirm('Are you sure you want to delete this funding round?')) {
+      removeRound(roundId);
+    }
   };
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const round: FundingRound = {
-      id: generateId(),
-      name: roundData.name || 'Unnamed Round',
-      type: roundData.type!,
-      capitalRaised: roundData.capitalRaised!,
-      timestamp: roundData.timestamp!,
-      ...(roundData.type === 'SAFE' ? {
-        safeTerms: {
-          valuationCap: roundData.safeTerms?.valuationCap,
-          discount: roundData.safeTerms?.discount,
-          mostFavoredNation: false
-        }
-      } : {
-        pricedTerms: {
-          preMoneyValuation: roundData.pricedTerms?.preMoneyValuation,
-          sharePrice: 0 // Will be calculated
-        }
-      })
-    };
+    if (editingRound) {
+      // Update existing round
+      const updatedRound: Partial<FundingRound> = {
+        name: roundData.name || 'Unnamed Round',
+        type: roundData.type!,
+        capitalRaised: roundData.capitalRaised!,
+        timestamp: roundData.timestamp!,
+        ...(roundData.type === 'SAFE' ? {
+          safeTerms: {
+            valuationCap: roundData.safeTerms?.valuationCap,
+            discount: roundData.safeTerms?.discount,
+            mostFavoredNation: false
+          }
+        } : {
+          pricedTerms: {
+            preMoneyValuation: roundData.pricedTerms?.preMoneyValuation,
+            sharePrice: 0 // Will be calculated
+          }
+        }),
+        founderSecondary: roundData.founderSecondary,
+        esopAdjustment: roundData.esopAdjustment
+      };
+      
+      updateRound(editingRound.id, updatedRound);
+    } else {
+      // Create new round
+      const round: FundingRound = {
+        id: generateId(),
+        name: roundData.name || 'Unnamed Round',
+        type: roundData.type!,
+        capitalRaised: roundData.capitalRaised!,
+        timestamp: roundData.timestamp!,
+        ...(roundData.type === 'SAFE' ? {
+          safeTerms: {
+            valuationCap: roundData.safeTerms?.valuationCap,
+            discount: roundData.safeTerms?.discount,
+            mostFavoredNation: false
+          }
+        } : {
+          pricedTerms: {
+            preMoneyValuation: roundData.pricedTerms?.preMoneyValuation,
+            sharePrice: 0 // Will be calculated
+          }
+        }),
+        founderSecondary: roundData.founderSecondary,
+        esopAdjustment: roundData.esopAdjustment
+      };
+      
+      addRound(round);
+    }
     
-    addRound(round);
     resetForm();
     setIsOpen(false);
   };
@@ -103,9 +147,22 @@ export const RoundBuilder: React.FC = () => {
                   )}
                 </div>
               </div>
-              <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                <Settings className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => startEdit(round)}
+                  className="p-2 text-blue-500 hover:bg-blue-50 rounded-md transition-colors"
+                  title="Edit round"
+                >
+                  <Edit className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDelete(round.id)}
+                  className="p-2 text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                  title="Delete round"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))
         )}
@@ -115,7 +172,9 @@ export const RoundBuilder: React.FC = () => {
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Add Funding Round</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-6">
+              {editingRound ? 'Edit Funding Round' : 'Add Funding Round'}
+            </h3>
             
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Round Name & Type */}
@@ -435,7 +494,7 @@ export const RoundBuilder: React.FC = () => {
                   type="submit"
                   className="flex-1 py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                 >
-                  Add Round
+                  {editingRound ? 'Update Round' : 'Add Round'}
                 </button>
               </div>
             </form>
