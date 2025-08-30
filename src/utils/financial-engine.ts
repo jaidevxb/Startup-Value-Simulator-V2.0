@@ -174,10 +174,10 @@ export class FinancialEngine {
     ];
     
     const totalPercentage = allStakeholders.reduce((sum, s) => sum + s.percentage, 0);
-    const adjustment = 100 - totalPercentage;
+    const adjustment = parseFloat((100 - totalPercentage).toFixed(10));
     
     // Apply adjustment to the stakeholder with the largest percentage to minimize impact
-    if (Math.abs(adjustment) > 0.001) {
+    if (Math.abs(adjustment) > 0.0001) {
       const largestStakeholder = allStakeholders.reduce((max, current) => 
         current.percentage > max.percentage ? current : max
       );
@@ -185,14 +185,48 @@ export class FinancialEngine {
       if (largestStakeholder.type === 'founder') {
         const founderIndex = postRoundState.founders.findIndex(f => f.id === largestStakeholder.id);
         if (founderIndex >= 0) {
-          postRoundState.founders[founderIndex].percentage += adjustment;
+          postRoundState.founders[founderIndex].percentage = parseFloat((postRoundState.founders[founderIndex].percentage + adjustment).toFixed(10));
         }
       } else if (largestStakeholder.type === 'esop') {
-        postRoundState.esop.percentage += adjustment;
+        postRoundState.esop.percentage = parseFloat((postRoundState.esop.percentage + adjustment).toFixed(10));
       } else if (largestStakeholder.type === 'investor') {
         const investorIndex = postRoundState.investors.findIndex(i => i.id === largestStakeholder.id);
         if (investorIndex >= 0) {
-          postRoundState.investors[investorIndex].percentage += adjustment;
+          postRoundState.investors[investorIndex].percentage = parseFloat((postRoundState.investors[investorIndex].percentage + adjustment).toFixed(10));
+        }
+      }
+    }
+    
+    // Final validation and forced correction to exactly 100%
+    const finalTotal = postRoundState.founders.reduce((sum, f) => sum + f.percentage, 0) +
+                      postRoundState.esop.percentage +
+                      postRoundState.investors.reduce((sum, i) => sum + i.percentage, 0);
+    
+    if (Math.abs(finalTotal - 100) > 0.0001) {
+      // Force the largest stakeholder to make total exactly 100%
+      const allFinalStakeholders = [
+        ...postRoundState.founders.map(f => ({ ...f, type: 'founder' })),
+        ...(postRoundState.esop.shares > 0 ? [{ ...postRoundState.esop, id: 'esop', name: 'ESOP', type: 'esop' }] : []),
+        ...postRoundState.investors.map(i => ({ ...i, type: 'investor' }))
+      ];
+      
+      const largestFinalStakeholder = allFinalStakeholders.reduce((max, current) => 
+        current.percentage > max.percentage ? current : max
+      );
+      
+      const finalAdjustment = parseFloat((100 - finalTotal).toFixed(10));
+      
+      if (largestFinalStakeholder.type === 'founder') {
+        const founderIndex = postRoundState.founders.findIndex(f => f.id === largestFinalStakeholder.id);
+        if (founderIndex >= 0) {
+          postRoundState.founders[founderIndex].percentage = parseFloat((postRoundState.founders[founderIndex].percentage + finalAdjustment).toFixed(10));
+        }
+      } else if (largestFinalStakeholder.type === 'esop') {
+        postRoundState.esop.percentage = parseFloat((postRoundState.esop.percentage + finalAdjustment).toFixed(10));
+      } else if (largestFinalStakeholder.type === 'investor') {
+        const investorIndex = postRoundState.investors.findIndex(i => i.id === largestFinalStakeholder.id);
+        if (investorIndex >= 0) {
+          postRoundState.investors[investorIndex].percentage = parseFloat((postRoundState.investors[investorIndex].percentage + finalAdjustment).toFixed(10));
         }
       }
     }
