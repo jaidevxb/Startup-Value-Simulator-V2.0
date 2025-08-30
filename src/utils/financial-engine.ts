@@ -166,13 +166,35 @@ export class FinancialEngine {
       newInvestor
     ];
     
-    // Validate totals
-    const totalPercentage = postRoundState.founders.reduce((sum, f) => sum + f.percentage, 0) +
-                           postRoundState.esop.percentage +
-                           postRoundState.investors.reduce((sum, i) => sum + i.percentage, 0);
+    // Ensure percentages add up to exactly 100% by adjusting for rounding errors
+    const allStakeholders = [
+      ...postRoundState.founders.map(f => ({ ...f, type: 'founder' })),
+      ...(postRoundState.esop.shares > 0 ? [{ ...postRoundState.esop, id: 'esop', name: 'ESOP', type: 'esop' }] : []),
+      ...postRoundState.investors.map(i => ({ ...i, type: 'investor' }))
+    ];
     
-    if (Math.abs(totalPercentage - 100) > 0.1) {
-      console.warn(`Total percentage mismatch: ${totalPercentage.toFixed(2)}%`);
+    const totalPercentage = allStakeholders.reduce((sum, s) => sum + s.percentage, 0);
+    const adjustment = 100 - totalPercentage;
+    
+    // Apply adjustment to the stakeholder with the largest percentage to minimize impact
+    if (Math.abs(adjustment) > 0.001) {
+      const largestStakeholder = allStakeholders.reduce((max, current) => 
+        current.percentage > max.percentage ? current : max
+      );
+      
+      if (largestStakeholder.type === 'founder') {
+        const founderIndex = postRoundState.founders.findIndex(f => f.id === largestStakeholder.id);
+        if (founderIndex >= 0) {
+          postRoundState.founders[founderIndex].percentage += adjustment;
+        }
+      } else if (largestStakeholder.type === 'esop') {
+        postRoundState.esop.percentage += adjustment;
+      } else if (largestStakeholder.type === 'investor') {
+        const investorIndex = postRoundState.investors.findIndex(i => i.id === largestStakeholder.id);
+        if (investorIndex >= 0) {
+          postRoundState.investors[investorIndex].percentage += adjustment;
+        }
+      }
     }
     
     return {
@@ -233,6 +255,12 @@ export class FinancialEngine {
       
       // Update total shares
       state.totalShares += additionalESOPShares;
+      
+      // Recalculate percentages after dilution
+      state.founders = state.founders.map(founder => ({
+        ...founder,
+        percentage: (founder.shares / state.totalShares) * 100
+      }));
     } else {
       // ESOP comes from post-money pool
       const futureShares = state.totalShares + newSharesFromRound;
