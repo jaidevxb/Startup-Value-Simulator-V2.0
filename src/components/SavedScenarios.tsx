@@ -143,14 +143,25 @@ export const SavedScenarios: React.FC<SavedScenariosProps> = ({ onCompare }) => 
           <h3 className="text-xl font-bold text-gray-900">Saved Scenarios</h3>
         </div>
         {currentScenario && (
-          <button
-            onClick={saveCurrentScenario}
-            disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            <Save className="w-4 h-4" />
-            {saving ? 'Saving...' : 'Save Current'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={saveCurrentScenario}
+              disabled={saving}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              <Save className="w-4 h-4" />
+              {saving ? 'Saving...' : 'Save Current'}
+            </button>
+            {selectedForComparison.size === 1 && currentScenario && (
+              <button
+                onClick={handleCompare}
+                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              >
+                <GitCompare className="w-4 h-4" />
+                Compare with Current
+              </button>
+            )}
+          </div>
         )}
       </div>
 
