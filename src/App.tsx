@@ -103,7 +103,10 @@ function App() {
             {/* Saved Scenarios (only if authenticated) */}
             {user && (
               <div className="mb-8">
-                <SavedScenarios onCompare={setComparisonScenarios} />
+                <SavedScenarios onCompare={(scenarios) => {
+                  setComparisonScenarios(scenarios);
+                  setShowComparison(true);
+                }} />
               </div>
             )}
             
