@@ -26,7 +26,7 @@ A comprehensive cap table modeling and exit simulation tool for startup founders
 - **Styling**: Tailwind CSS with custom design system
 - **Icons**: Lucide React
 - **Testing**: Vitest + React Testing Library
-- **Database**: Supabase (ready for integration)
+- **Database**: Supabase
 
 ## Financial Engine
 
