@@ -1,4 +1,11 @@
-# Startup Value Simulator
+# 🚀 Startup Value Simulator V2.0  
+
+Interactive tool to simulate startup financing scenarios including SAFEs, priced rounds, ESOP top-ups, and founder secondaries.  
+
+🔗 **Live Demo:** [startup-simulator.netlify.app](https://startup-simulator.netlify.app/)  
+📂 **Repository:** [GitHub](https://github.com/jaidevxb/Startup-Value-Simulator-V2.0)  
+
+---
 
 A comprehensive cap table modeling and exit simulation tool for startup founders. Model funding scenarios, track equity dilution across rounds, and calculate potential returns at exit.
 
