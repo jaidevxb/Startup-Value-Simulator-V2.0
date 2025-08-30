@@ -26,6 +26,7 @@ interface ScenarioStore {
   simulateExit: (exitValuation: number) => void;
   loadScenario: (scenario: Scenario) => void;
   clearScenario: () => void;
+  shareScenario: () => void;
 }
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -247,6 +248,20 @@ export const useScenarioStore = create<ScenarioStore>()(
         }
         
         return data?.map(row => row.data) || [];
+      },
+      
+      shareScenario: () => {
+        const scenario = get().currentScenario;
+        if (!scenario) return;
+        
+        const shareableData = encodeURIComponent(JSON.stringify(scenario));
+        const shareableUrl = `${window.location.origin}?scenario=${shareableData}`;
+        
+        navigator.clipboard.writeText(shareableUrl).then(() => {
+          alert('Shareable link copied to clipboard!');
+        }).catch(() => {
+          alert('Failed to copy link. Please try again.');
+        });
       }
     }),
     {
